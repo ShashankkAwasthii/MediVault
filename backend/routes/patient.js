@@ -30,8 +30,8 @@ router.get("/medicines", (req, res) => {
 	});
 });
 
-router.get("/records", requireRole("patient"), getMyRecords);
-router.get("/records/:id", requireRole("patient"), getRecordById);
+router.get("/records", getMyRecords);
+router.get("/records/:id", getRecordById);
 
 router.get("/reports", getMyReports);
 router.post("/reports", uploadReport.single("report"), uploadMyReport);

@@ -13,14 +13,14 @@ const router = express.Router();
 router.use(verifyToken, requireRole("doctor"));
 
 
-router.get("/dashboard", verifyToken, requireRole("doctor"), (req, res) => {
+router.get("/dashboard", (req, res) => {
 	res.status(200).json({
 		message: "Doctor dashboard data fetched successfully.",
 		user: req.user,
 	});
 });
 
-router.get("/patients", verifyToken, requireRole("doctor"), (req, res) => {
+router.get("/patients", (req, res) => {
 	res.status(200).json({
 		message: "Doctor patient list endpoint is accessible.",
 		doctorId: req.user.id,
