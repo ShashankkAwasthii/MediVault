@@ -1,6 +1,18 @@
-# 🏥 MediVault (React Native App)
+<div align="center">
 
-MediVault is now a **mobile-first healthcare app** built with **React Native + Expo** and powered by a **Node.js/Express + MongoDB** backend.
+# 🏥 MediVault (A React Native App)
+
+![React Native](https://img.shields.io/badge/React%20Native-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
+![Expo](https://img.shields.io/badge/Expo-000020?style=for-the-badge&logo=expo&logoColor=white)
+![Node.js](https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=nodedotjs&logoColor=white)
+![Express](https://img.shields.io/badge/Express-000000?style=for-the-badge&logo=express&logoColor=white)
+![MongoDB](https://img.shields.io/badge/MongoDB-47A248?style=for-the-badge&logo=mongodb&logoColor=white)
+
+MediVault is a **mobile healthcare app** built with **React Native + Expo** and powered by a **Node.js/Express + MongoDB** backend.
+
+[Features](#-app-features) • [Current Stack](#-current-stack) • [Setup](#-setup-instructions) • [API Prefix](#-main-api-prefix)
+
+</div>
 
 It helps patients and doctors manage records, medicines, reports, and communication in one place.
 
@@ -124,6 +136,6 @@ Current backend routes are mounted under:
 
 ## 👨‍💻 Status
 
-MediVault has moved from a web-first concept to a **React Native mobile app architecture**.
+MediVault is an active React Native healthcare app project.
 
-This README reflects the current app direction.
+The app and backend are being improved continuously.
