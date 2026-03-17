@@ -33,33 +33,33 @@ export default function DrawerLayout({
   const { colors, isDark, toggleTheme, role: ctxRole, userName: ctxUserName, userInitial: ctxUserInitial } = useTheme();
 
   // ✅ Always use context values — props are ignored to prevent role switching bugs
-  const role        = ctxRole;
-  const userName    = ctxUserName;
+  const role = ctxRole;
+  const userName = ctxUserName;
   const userInitial = ctxUserInitial;
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const slideAnim    = useRef(new Animated.Value(-DRAWER_W)).current;
+  const slideAnim = useRef(new Animated.Value(-DRAWER_W)).current;
   const backdropAnim = useRef(new Animated.Value(0)).current;
   const themeBtnScale = useRef(new Animated.Value(1)).current;
 
   const openDrawer = () => {
     setDrawerOpen(true);
     Animated.parallel([
-      Animated.spring(slideAnim,    { toValue: 0,  useNativeDriver: true, tension: 65, friction: 11 }),
-      Animated.timing(backdropAnim, { toValue: 1,  duration: 250, useNativeDriver: true }),
+      Animated.spring(slideAnim, { toValue: 0, useNativeDriver: true, tension: 65, friction: 11 }),
+      Animated.timing(backdropAnim, { toValue: 1, duration: 250, useNativeDriver: true }),
     ]).start();
   };
 
   const closeDrawer = () => {
     Animated.parallel([
-      Animated.timing(slideAnim,    { toValue: -DRAWER_W, duration: 220, useNativeDriver: true }),
-      Animated.timing(backdropAnim, { toValue: 0,          duration: 200, useNativeDriver: true }),
+      Animated.timing(slideAnim, { toValue: -DRAWER_W, duration: 220, useNativeDriver: true }),
+      Animated.timing(backdropAnim, { toValue: 0, duration: 200, useNativeDriver: true }),
     ]).start(() => setDrawerOpen(false));
   };
 
   const handleThemeToggle = () => {
     Animated.sequence([
       Animated.spring(themeBtnScale, { toValue: 0.8, useNativeDriver: true, tension: 200 }),
-      Animated.spring(themeBtnScale, { toValue: 1,   useNativeDriver: true, tension: 200 }),
+      Animated.spring(themeBtnScale, { toValue: 1, useNativeDriver: true, tension: 200 }),
     ]).start();
     toggleTheme();
   };
@@ -73,9 +73,8 @@ export default function DrawerLayout({
 
   return (
     <View style={[s.root, { backgroundColor: colors.bgPage }]}>
-      <StatusBar barStyle="light-content" backgroundColor={barBg} translucent={false} />
-
-      <SafeAreaView style={{ backgroundColor: barBg }}>
+      <StatusBar barStyle="light-content" backgroundColor={barBg} translucent={false} animated />
+      <SafeAreaView style={{ backgroundColor: barBg, paddingTop: Platform.OS === 'android' ? 0 : 0 }}>
         <View style={[s.topBar, { backgroundColor: barBg }]}>
 
           {/* Left */}
@@ -152,11 +151,13 @@ export default function DrawerLayout({
 const s = StyleSheet.create({
   root: { flex: 1 },
   topBar: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 14,
-    paddingTop: Platform.OS === 'android' ? 12 : 8,
-    paddingBottom: 12,
-    minHeight: Platform.OS === 'android' ? 64 : 56,
+    paddingTop: Platform.OS === 'android' ? 40 : 16,
+    paddingBottom: 14,
+    minHeight: Platform.OS === 'android' ? 88 : 72,
   },
   accentLine: { height: 3, opacity: 0.8 },
   topLeft: { flexDirection: 'row', alignItems: 'center', flex: 1, gap: 10, marginRight: 8 },
