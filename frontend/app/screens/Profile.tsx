@@ -1,16 +1,16 @@
 import React, { useState } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
-  TextInput, Switch, Alert, Dimensions,
+  TextInput, Switch, Alert,
 } from 'react-native';
 import DrawerLayout from '../../components/DrawerLayout';
 import { useTheme } from '../../context/ThemeContext';
-import { Card, CardHeader, Badge, Button } from '../../components/UI';
+import { useBadges } from '../../context/BadgeContext';
+import { Card, CardHeader, Button } from '../../components/UI';
 
-const { width: SW } = Dimensions.get('window');
-type Tab = 'profile' | 'health' | 'notifications' | 'security';
+type Tab = 'profile' | 'health' | 'notifications' | 'security' | 'alerts';
 
-/* ─── Shared input ─────────────────────────────────────────────── */
+/* ─── Shared editable field ─────────────────────────────────────── */
 function Field({ label, value, secure = false, colors }: {
   label: string; value: string; secure?: boolean; colors: any;
 }) {
@@ -27,7 +27,7 @@ function Field({ label, value, secure = false, colors }: {
   );
 }
 
-/* ─── Shared tab bar ───────────────────────────────────────────── */
+/* ─── Shared tab bar ────────────────────────────────────────────── */
 function TabBar({ tabs, active, onSelect, accent }: {
   tabs: { key: string; label: string }[];
   active: string; onSelect: (k: string) => void; accent: string;
@@ -47,16 +47,53 @@ function TabBar({ tabs, active, onSelect, accent }: {
   );
 }
 
-/* ═══════════════════ DOCTOR PROFILE ═══════════════════ */
+/* ─── Reusable single preference row with working Switch ────────── */
+function PrefRow({
+  label, sub, value, onToggle, accent, colors, isLast,
+}: {
+  label: string; sub: string; value: boolean;
+  onToggle: () => void; accent: string; colors: any; isLast: boolean;
+}) {
+  return (
+    <View style={[ft.prefRow,
+      !isLast && { borderBottomWidth: 1, borderBottomColor: colors.borderSoft }]}>
+      <View style={{ flex: 1, marginRight: 12 }}>
+        <Text style={{ fontWeight: '600', fontSize: 13, color: colors.textPrimary }}>{label}</Text>
+        <Text style={{ fontSize: 11, color: colors.textFaint, marginTop: 2 }}>{sub}</Text>
+      </View>
+      {/* ✅ Switch is fully controlled — value from context, onValueChange updates context */}
+      <Switch
+        value={value}
+        onValueChange={onToggle}
+        trackColor={{ false: colors.border, true: accent + '80' }}
+        thumbColor={value ? accent : colors.gray400}
+      />
+    </View>
+  );
+}
+
+/* ═══════════════════ DOCTOR PROFILE ═══════════════════════════════ */
 function DoctorProfile() {
   const { colors, isDark } = useTheme();
-  const [tab, setTab] = useState('profile');
+  // ✅ Read doctor settings from context — persists globally
+  const { doctorSettings, toggleDoctorSetting } = useBadges();
+  const [tab, setTab] = useState<Tab>('profile');
   const accent = colors.primary;
 
   const tabs = [
-    { key: 'profile',  label: '👨‍⚕️ Profile'  },
-    { key: 'alerts',   label: '🔔 Alerts'    },
-    { key: 'security', label: '🔒 Security'  },
+    { key: 'profile',  label: '👨‍⚕️ Profile' },
+    { key: 'alerts',   label: '🔔 Alerts'   },
+    { key: 'security', label: '🔒 Security' },
+  ];
+
+  // Doctor alert preference rows — key maps directly to DoctorSettings
+  const alertPrefs: { key: keyof typeof doctorSettings; label: string; sub: string }[] = [
+    { key: 'criticalPatientAlerts', label: 'Critical Patient Alerts',  sub: 'Immediate alerts for critical conditions'    },
+    { key: 'missedDoseAlerts',      label: 'Missed Dose Alerts',        sub: 'When patients miss medication doses'         },
+    { key: 'newReportUploads',      label: 'New Report Uploads',        sub: 'When patients upload medical reports'        },
+    { key: 'smsDeliveryConfirm',    label: 'SMS Delivery Confirmation', sub: 'Confirm SMS sent via Twilio'                 },
+    { key: 'weeklyPatientSummary',  label: 'Weekly Patient Summary',    sub: 'Weekly adherence report'                    },
+    { key: 'lowAdherenceWarning',   label: 'Low Adherence Warning',     sub: 'Alert when adherence drops below 70%'       },
   ];
 
   return (
@@ -64,27 +101,23 @@ function DoctorProfile() {
       {/* Header */}
       <View style={[dh.header, { backgroundColor: isDark ? '#0d1b3e' : '#0C1F6B' }]}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, marginBottom: 16 }}>
-          <View style={dh.avatar}>
-            <Text style={{ fontSize: 28 }}>👨‍⚕️</Text>
-          </View>
+          <View style={dh.avatar}><Text style={{ fontSize: 28 }}>👨‍⚕️</Text></View>
           <View style={{ flex: 1 }}>
             <Text style={dh.name}>Dr. Arun Sharma</Text>
             <Text style={dh.spec}>General Physician</Text>
             <Text style={dh.hosp}>City General Hospital</Text>
           </View>
         </View>
-        {/* Chips */}
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 16 }}>
           {['🏥 HOSP-2024-001','👥 28 Patients','⭐ 4.9 Rating'].map(c => (
             <View key={c} style={dh.chip}><Text style={dh.chipTxt}>{c}</Text></View>
           ))}
         </View>
-        {/* Stats */}
-        <View style={[dh.statsRow]}>
+        <View style={dh.statsRow}>
           {[['28','Patients'],['92%','Adherence'],['5','Pending'],['2','Critical']].map(([v, l]) => (
             <View key={l} style={dh.statItem}>
-              <Text style={dh.statVal} numberOfLines={1} adjustsFontSizeToFit>{v}</Text>
-              <Text style={dh.statLbl} numberOfLines={1}>{l}</Text>
+              <Text style={dh.statVal} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>{v}</Text>
+              <Text style={dh.statLbl} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}>{l}</Text>
             </View>
           ))}
         </View>
@@ -93,17 +126,18 @@ function DoctorProfile() {
       <TabBar tabs={tabs} active={tab} onSelect={setTab} accent={accent} />
 
       <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 40 }}>
+
         {tab === 'profile' && (
           <Card>
             <CardHeader title="Professional Information" />
             <View style={{ padding: 16 }}>
               {[
-                ['Full Name',      'Dr. Arun Sharma'],
-                ['Specialisation', 'General Physician'],
-                ['Hospital',       'City General Hospital'],
-                ['Hospital ID',    'HOSP-2024-001'],
+                ['Full Name',      'Dr. Arun Sharma'       ],
+                ['Specialisation', 'General Physician'     ],
+                ['Hospital',       'City General Hospital' ],
+                ['Hospital ID',    'HOSP-2024-001'         ],
                 ['Email',          'dr.sharma@hospital.com'],
-                ['Phone',          '+91 98765 43210'],
+                ['Phone',          '+91 98765 43210'       ],
               ].map(([l, v]) => <Field key={l} label={l} value={v} colors={colors} />)}
               <Button label="Save Changes" onPress={() => Alert.alert('Saved ✅')} />
             </View>
@@ -114,24 +148,17 @@ function DoctorProfile() {
           <Card>
             <CardHeader title="🔔 Alert Preferences" />
             <View style={{ padding: 16 }}>
-              {[
-                ['Critical Patient Alerts',   'Immediate alerts for critical conditions', true ],
-                ['Missed Dose Alerts',         'When patients miss medication doses',      true ],
-                ['New Report Uploads',         'When patients upload medical reports',     true ],
-                ['SMS Delivery Confirmation',  'Confirm SMS sent via Twilio',              false],
-                ['Weekly Patient Summary',     'Weekly adherence report',                  true ],
-                ['Low Adherence Warning',      'Alert when adherence drops below 70%',     true ],
-              ].map(([label, sub, on], i, arr) => (
-                <View key={String(label)} style={[ft.prefRow,
-                  i < arr.length - 1 && { borderBottomWidth: 1, borderBottomColor: colors.borderSoft }]}>
-                  <View style={{ flex: 1, marginRight: 12 }}>
-                    <Text style={{ fontWeight: '600', fontSize: 13, color: colors.textPrimary }}>{String(label)}</Text>
-                    <Text style={{ fontSize: 11, color: colors.textFaint, marginTop: 2 }}>{String(sub)}</Text>
-                  </View>
-                  <Switch value={Boolean(on)}
-                    trackColor={{ false: colors.border, true: accent + '80' }}
-                    thumbColor={on ? accent : colors.gray400} />
-                </View>
+              {alertPrefs.map((pref, i) => (
+                <PrefRow
+                  key={pref.key}
+                  label={pref.label}
+                  sub={pref.sub}
+                  value={doctorSettings[pref.key]}
+                  onToggle={() => toggleDoctorSetting(pref.key)}
+                  accent={accent}
+                  colors={colors}
+                  isLast={i === alertPrefs.length - 1}
+                />
               ))}
             </View>
           </Card>
@@ -151,9 +178,15 @@ function DoctorProfile() {
             <Card style={{ marginTop: 0 }}>
               <CardHeader title="📋 Doctor License" />
               <View style={{ padding: 16 }}>
-                {[['License No.','MCI-2024-78901'],['Valid Until','December 2026'],['Issued By','Medical Council of India']].map(([l, v], i, a) => (
-                  <View key={l} style={[{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 10 },
-                    i < a.length - 1 && { borderBottomWidth: 1, borderBottomColor: colors.borderSoft }]}>
+                {[
+                  ['License No.', 'MCI-2024-78901'],
+                  ['Valid Until', 'December 2026'],
+                  ['Issued By',   'Medical Council of India'],
+                ].map(([l, v], i, a) => (
+                  <View key={l} style={[
+                    { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 10 },
+                    i < a.length - 1 && { borderBottomWidth: 1, borderBottomColor: colors.borderSoft },
+                  ]}>
                     <Text style={{ fontSize: 12, color: colors.textMuted }}>{l}</Text>
                     <Text style={{ fontSize: 12, fontWeight: '700', color: colors.textPrimary }}>{v}</Text>
                   </View>
@@ -167,21 +200,33 @@ function DoctorProfile() {
   );
 }
 
-/* ═══════════════════ PATIENT PROFILE ═══════════════════ */
+/* ═══════════════════ PATIENT PROFILE ══════════════════════════════ */
 function PatientProfile() {
   const { colors, isDark } = useTheme();
-  const [tab, setTab]           = useState('profile');
+  // ✅ Read patient settings from context — persists globally
+  const { patientSettings, togglePatientSetting } = useBadges();
+  const [tab, setTab]             = useState<Tab>('profile');
   const [bloodType, setBloodType] = useState('O+');
   const accent = colors.teal;
 
+  const bloodTypes = ['A+','A-','B+','B-','O+','O-','AB+','AB-'];
+
   const tabs = [
-    { key: 'profile',       label: '👤 Profile'      },
-    { key: 'health',        label: '🏥 Health'        },
-    { key: 'notifications', label: '🔔 Notifs'        },
-    { key: 'security',      label: '🔒 Security'     },
+    { key: 'profile',       label: '👤 Profile'  },
+    { key: 'health',        label: '🏥 Health'   },
+    { key: 'notifications', label: '🔔 Notifs'   },
+    { key: 'security',      label: '🔒 Security' },
   ];
 
-  const bloodTypes = ['A+','A-','B+','B-','O+','O-','AB+','AB-'];
+  // Patient notification preference rows — key maps directly to PatientSettings
+  const notifPrefs: { key: keyof typeof patientSettings; label: string; sub: string }[] = [
+    { key: 'medicationReminders',   label: 'Medication Reminders',   sub: 'Get notified 15 min before each dose'         },
+    { key: 'missedDoseAlerts',      label: 'Missed Dose Alerts',      sub: 'Alert when a dose is missed'                  },
+    { key: 'doctorMessages',        label: 'Doctor Messages',         sub: 'Notifications from your doctor'               },
+    { key: 'aiReportReady',         label: 'AI Report Ready',         sub: 'When AI finishes analysing your report'       },
+    { key: 'weeklyAdherenceReport', label: 'Weekly Adherence Report', sub: 'Summary of your weekly medication intake'     },
+    { key: 'streakMilestones',      label: 'Streak Milestones',       sub: 'Celebrate your medication streaks!'           },
+  ];
 
   return (
     <>
@@ -198,19 +243,17 @@ function PatientProfile() {
             <Text style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>Member since March 2026</Text>
           </View>
         </View>
-        {/* Chips */}
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 16 }}>
           {['🩸 O+','⚠️ Penicillin Allergy','🆔 MV-2024-RS-001'].map(c => (
             <View key={c} style={ph.chip}><Text style={ph.chipTxt}>{c}</Text></View>
           ))}
         </View>
-        {/* Stats */}
         <View style={ph.statsRow}>
           {[['❤️','85','Health'],['✅','92%','Adherence'],['🔥','7d','Streak'],['💊','3','Medicines']].map(([ic, v, l]) => (
             <View key={l} style={ph.statItem}>
               <Text style={{ fontSize: 16 }}>{ic}</Text>
-              <Text style={ph.statVal}>{v}</Text>
-              <Text style={ph.statLbl}>{l}</Text>
+              <Text style={ph.statVal} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>{v}</Text>
+              <Text style={ph.statLbl} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}>{l}</Text>
             </View>
           ))}
         </View>
@@ -219,6 +262,7 @@ function PatientProfile() {
       <TabBar tabs={tabs} active={tab} onSelect={setTab} accent={accent} />
 
       <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 40 }}>
+
         {tab === 'profile' && (
           <Card>
             <CardHeader title="Personal Information" />
@@ -268,24 +312,17 @@ function PatientProfile() {
           <Card>
             <CardHeader title="🔔 Notification Preferences" />
             <View style={{ padding: 16 }}>
-              {[
-                ['Medication Reminders',   'Get notified 15 min before each dose',    true ],
-                ['Missed Dose Alerts',      'Alert when a dose is missed',              true ],
-                ['Doctor Messages',         'Notifications from your doctor',           true ],
-                ['AI Report Ready',         'When AI finishes analysing your report',   true ],
-                ['Weekly Adherence Report', 'Summary of your weekly medication intake', false],
-                ['Streak Milestones',       'Celebrate your medication streaks!',       true ],
-              ].map(([label, sub, on], i, arr) => (
-                <View key={String(label)} style={[ft.prefRow,
-                  i < arr.length - 1 && { borderBottomWidth: 1, borderBottomColor: colors.borderSoft }]}>
-                  <View style={{ flex: 1, marginRight: 12 }}>
-                    <Text style={{ fontWeight: '600', fontSize: 13, color: colors.textPrimary }}>{String(label)}</Text>
-                    <Text style={{ fontSize: 11, color: colors.textFaint, marginTop: 2 }}>{String(sub)}</Text>
-                  </View>
-                  <Switch value={Boolean(on)}
-                    trackColor={{ false: colors.border, true: accent + '80' }}
-                    thumbColor={on ? accent : colors.gray400} />
-                </View>
+              {notifPrefs.map((pref, i) => (
+                <PrefRow
+                  key={pref.key}
+                  label={pref.label}
+                  sub={pref.sub}
+                  value={patientSettings[pref.key]}
+                  onToggle={() => togglePatientSetting(pref.key)}
+                  accent={accent}
+                  colors={colors}
+                  isLast={i === notifPrefs.length - 1}
+                />
               ))}
             </View>
           </Card>
@@ -319,17 +356,17 @@ function PatientProfile() {
   );
 }
 
-/* ═══════════════════ ROOT EXPORT ═══════════════════ */
+/* ═══════════════════ ROOT EXPORT ═══════════════════════════════════ */
 export default function ProfileScreen() {
-  const { role, colors } = useTheme();
+  const { role, colors, userName, userInitial } = useTheme();
   const isDoctor = role === 'doctor';
   return (
     <DrawerLayout
       title="Profile & Settings"
       subtitle={isDoctor ? 'Doctor Account' : 'Patient Account'}
       role={role}
-      userName={isDoctor ? 'Dr. Sharma' : 'Rahul Singh'}
-      userInitial={isDoctor ? 'DS' : 'RS'}
+      userName={userName}
+      userInitial={userInitial}
       showBack
     >
       <View style={{ flex: 1, backgroundColor: colors.bgPage }}>
@@ -339,44 +376,44 @@ export default function ProfileScreen() {
   );
 }
 
-/* ── Doctor header styles ── */
+/* ── Doctor header styles ─────────────────────────────────────────── */
 const dh = StyleSheet.create({
-  header: { padding: 20, paddingBottom: 20 },
-  avatar: { width: 60, height: 60, borderRadius: 30, backgroundColor: 'rgba(255,255,255,0.15)', alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: 'rgba(255,255,255,0.35)' },
-  name:   { fontSize: 20, fontWeight: '900', color: 'white', letterSpacing: -0.5 },
-  spec:   { fontSize: 13, color: 'rgba(255,255,255,0.8)', marginTop: 2 },
-  hosp:   { fontSize: 11, color: 'rgba(255,255,255,0.5)', marginTop: 1 },
-  chip:   { backgroundColor: 'rgba(255,255,255,0.12)', paddingVertical: 5, paddingHorizontal: 11, borderRadius: 20 },
-  chipTxt:{ fontSize: 11, color: 'white', fontWeight: '600' },
-  statsRow:{ flexDirection: 'row', backgroundColor: 'rgba(0,0,0,0.25)', borderRadius: 14, padding: 14 },
-  statItem:{ flex: 1, alignItems: 'center' },
-  statVal: { fontSize: 18, fontWeight: '900', color: 'white' },
-  statLbl: { fontSize: 10, color: "rgba(255,255,255,0.55)", marginTop: 2, textAlign: "center" },
+  header:   { padding: 20, paddingBottom: 20 },
+  avatar:   { width: 60, height: 60, borderRadius: 30, backgroundColor: 'rgba(255,255,255,0.15)', alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: 'rgba(255,255,255,0.35)' },
+  name:     { fontSize: 20, fontWeight: '900', color: 'white', letterSpacing: -0.5 },
+  spec:     { fontSize: 13, color: 'rgba(255,255,255,0.8)', marginTop: 2 },
+  hosp:     { fontSize: 11, color: 'rgba(255,255,255,0.5)', marginTop: 1 },
+  chip:     { backgroundColor: 'rgba(255,255,255,0.12)', paddingVertical: 5, paddingHorizontal: 11, borderRadius: 20 },
+  chipTxt:  { fontSize: 11, color: 'white', fontWeight: '600' },
+  statsRow: { flexDirection: 'row', backgroundColor: 'rgba(0,0,0,0.25)', borderRadius: 14, padding: 14 },
+  statItem: { flex: 1, alignItems: 'center', paddingHorizontal: 2 },
+  statVal:  { fontSize: 18, fontWeight: '900', color: 'white' },
+  statLbl:  { fontSize: 10, color: 'rgba(255,255,255,0.55)', marginTop: 2, textAlign: 'center', width: '100%' },
 });
 
-/* ── Patient header styles ── */
+/* ── Patient header styles ────────────────────────────────────────── */
 const ph = StyleSheet.create({
-  header: { padding: 20, paddingBottom: 20 },
-  avatar: { width: 64, height: 64, borderRadius: 32, backgroundColor: 'rgba(255,255,255,0.15)', alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: 'rgba(255,255,255,0.35)', position: 'relative' },
-  avatarTxt: { fontSize: 22, fontWeight: '900', color: 'white' },
-  editBtn: { position: 'absolute', bottom: 0, right: 0, width: 22, height: 22, borderRadius: 11, backgroundColor: 'white', alignItems: 'center', justifyContent: 'center' },
-  name:  { fontSize: 20, fontWeight: '900', color: 'white', letterSpacing: -0.5 },
-  email: { fontSize: 12, color: 'rgba(255,255,255,0.65)', marginTop: 2 },
-  chip:  { backgroundColor: 'rgba(255,255,255,0.12)', paddingVertical: 5, paddingHorizontal: 11, borderRadius: 20 },
-  chipTxt: { fontSize: 11, color: 'white', fontWeight: '600' },
+  header:   { padding: 20, paddingBottom: 20 },
+  avatar:   { width: 64, height: 64, borderRadius: 32, backgroundColor: 'rgba(255,255,255,0.15)', alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: 'rgba(255,255,255,0.35)', position: 'relative' },
+  avatarTxt:{ fontSize: 22, fontWeight: '900', color: 'white' },
+  editBtn:  { position: 'absolute', bottom: 0, right: 0, width: 22, height: 22, borderRadius: 11, backgroundColor: 'white', alignItems: 'center', justifyContent: 'center' },
+  name:     { fontSize: 20, fontWeight: '900', color: 'white', letterSpacing: -0.5 },
+  email:    { fontSize: 12, color: 'rgba(255,255,255,0.65)', marginTop: 2 },
+  chip:     { backgroundColor: 'rgba(255,255,255,0.12)', paddingVertical: 5, paddingHorizontal: 11, borderRadius: 20 },
+  chipTxt:  { fontSize: 11, color: 'white', fontWeight: '600' },
   statsRow: { flexDirection: 'row', backgroundColor: 'rgba(0,0,0,0.25)', borderRadius: 14, paddingVertical: 14, paddingHorizontal: 6 },
-  statItem: { flex: 1, alignItems: 'center', gap: 2 },
+  statItem: { flex: 1, alignItems: 'center', gap: 2, paddingHorizontal: 2 },
   statVal:  { fontSize: 15, fontWeight: '900', color: 'white' },
-  statLbl:  { fontSize: 9, color: 'rgba(255,255,255,0.5)', textAlign: 'center' },
+  statLbl:  { fontSize: 10, color: 'rgba(255,255,255,0.5)', textAlign: 'center', width: '100%' },
 });
 
-/* ── Shared form + tab styles ── */
+/* ── Shared form + tab styles ─────────────────────────────────────── */
 const ft = StyleSheet.create({
-  tabRow: { borderBottomWidth: 1, maxHeight: 50 },
-  tab: { paddingHorizontal: 14, paddingVertical: 13, borderBottomWidth: 2.5, borderBottomColor: 'transparent', marginRight: 2 },
-  tabTxt: { fontSize: 12, fontWeight: '600' },
-  label: { fontSize: 12, fontWeight: '600', marginBottom: 6 },
-  input: { borderWidth: 1.5, borderRadius: 10, paddingVertical: 11, paddingHorizontal: 14, fontSize: 14 },
-  chip:  { paddingVertical: 6, paddingHorizontal: 14, borderRadius: 20, borderWidth: 1.5 },
+  tabRow:  { borderBottomWidth: 1, minHeight: 48 },
+  tab:     { paddingHorizontal: 14, paddingVertical: 13, borderBottomWidth: 2.5, borderBottomColor: 'transparent', marginRight: 2 },
+  tabTxt:  { fontSize: 12, fontWeight: '600' },
+  label:   { fontSize: 12, fontWeight: '600', marginBottom: 6 },
+  input:   { borderWidth: 1.5, borderRadius: 10, paddingVertical: 11, paddingHorizontal: 14, fontSize: 14 },
+  chip:    { paddingVertical: 6, paddingHorizontal: 14, borderRadius: 20, borderWidth: 1.5 },
   prefRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14 },
 });

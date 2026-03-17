@@ -6,22 +6,23 @@ import {
 import { useRouter, usePathname } from 'expo-router';
 import { useTheme } from '../context/ThemeContext';
 import { useBadges } from '../context/BadgeContext';
+import { allPatients } from '../data/mockData';
 
 interface NavSection { section: string }
-interface NavLink { label: string; href: string; icon: string; badgeKey?: 'notif' | 'msg' | number }
+interface NavLink { label: string; href: string; icon: string; badgeKey?: 'notif' | 'msg' | 'alert' | number }
 type NavEntry = NavSection | NavLink;
 
 const doctorNav: NavEntry[] = [
   { section: 'Main' },
-  { label: 'Dashboard',     href: '/screens/DoctorDashboard',  icon: '🏠'                    },
-  { label: 'Patients',      href: '/screens/Patients',          icon: '👥', badgeKey: 28      },
-  { label: 'Alerts',        href: '/screens/Alerts',            icon: '🚨', badgeKey: 2       },
-  { label: 'Messages',      href: '/screens/Messages',          icon: '💬', badgeKey: 'msg'   },
+  { label: 'Dashboard',     href: '/screens/DoctorDashboard',  icon: '🏠'                               },
+  { label: 'Patients',      href: '/screens/Patients',          icon: '👥', badgeKey: allPatients.length },
+  { label: 'Alerts',        href: '/screens/Alerts',            icon: '🚨', badgeKey: 'alert'            },
+  { label: 'Messages',      href: '/screens/Messages',          icon: '💬', badgeKey: 'msg'              },
   { section: 'Activity' },
-  { label: 'Notifications', href: '/screens/Notifications',     icon: '🔔', badgeKey: 'notif' },
+  { label: 'Notifications', href: '/screens/Notifications',     icon: '🔔', badgeKey: 'notif'            },
   { section: 'Account' },
-  { label: 'Profile',       href: '/screens/Profile',           icon: '⚙️'                    },
-  { label: 'Logout',        href: '/screens/SplashScreen',      icon: '🚪'                    },
+  { label: 'Profile',       href: '/screens/Profile',           icon: '⚙️'                               },
+  { label: 'Logout',        href: '/screens/SplashScreen',      icon: '🚪'                               },
 ];
 
 const patientNav: NavEntry[] = [
@@ -42,6 +43,32 @@ const patientNav: NavEntry[] = [
 
 function isSection(e: NavEntry): e is NavSection { return 'section' in e; }
 
+// ── Fix: extracted so useRef is not called inside .map() ──
+function NavItem({ item, active, badgeCount, accent, onPress }: {
+  item: NavLink; active: boolean; badgeCount: number; accent: string; onPress: () => void;
+}) {
+  const scale = useRef(new Animated.Value(1)).current;
+  return (
+    <Animated.View style={{ transform: [{ scale }] }}>
+      <TouchableOpacity
+        onPressIn={() => Animated.spring(scale, { toValue: 0.94, useNativeDriver: true, tension: 200 }).start()}
+        onPressOut={() => Animated.spring(scale, { toValue: 1, useNativeDriver: true, tension: 200 }).start()}
+        onPress={onPress}
+        activeOpacity={1}
+        style={[s.navItem, active && { backgroundColor: 'rgba(255,255,255,0.13)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }]}>
+        <Text style={[s.navIcon, { opacity: active ? 1 : 0.7 }]}>{item.icon}</Text>
+        <Text style={[s.navLabel, active && s.navLabelActive]}>{item.label}</Text>
+        {badgeCount > 0 && (
+          <View style={s.badge}>
+            <Text style={s.badgeText}>{badgeCount}</Text>
+          </View>
+        )}
+        {active && <View style={[s.activeBar, { backgroundColor: accent }]} />}
+      </TouchableOpacity>
+    </Animated.View>
+  );
+}
+
 interface SidebarProps {
   role?: 'doctor' | 'patient';
   userName?: string;
@@ -53,14 +80,15 @@ export default function Sidebar({ role = 'patient', userName = 'User', userIniti
   const router   = useRouter();
   const pathname = usePathname();
   const { isDark } = useTheme();
-  const { notifCount, messageCount } = useBadges();
+  const { notifCount, messageCount, alertCount } = useBadges();
 
   const navItems = role === 'doctor' ? doctorNav : patientNav;
   const home     = role === 'doctor' ? '/screens/DoctorDashboard' : '/screens/PatientDashboard';
 
-  const resolveBadge = (key?: 'notif' | 'msg' | number): number => {
-    if (key === 'notif')    return notifCount;
-    if (key === 'msg') return messageCount;
+  const resolveBadge = (key?: 'notif' | 'msg' | 'alert' | number): number => {
+    if (key === 'notif')         return notifCount;
+    if (key === 'msg')           return messageCount;
+    if (key === 'alert')         return alertCount;
     if (typeof key === 'number') return key;
     return 0;
   };
@@ -88,27 +116,16 @@ export default function Sidebar({ role = 'patient', userName = 'User', userIniti
         <ScrollView style={s.nav} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20 }}>
           {navItems.map((item, i) => {
             if (isSection(item)) return <Text key={i} style={s.sectionLabel}>{item.section}</Text>;
-            const active     = pathname === item.href;
             const badgeCount = resolveBadge((item as NavLink).badgeKey);
-            const scale      = useRef(new Animated.Value(1)).current;
             return (
-              <Animated.View key={item.href} style={{ transform: [{ scale }] }}>
-                <TouchableOpacity
-                  onPressIn={() => Animated.spring(scale, { toValue: 0.94, useNativeDriver: true, tension: 200 }).start()}
-                  onPressOut={() => Animated.spring(scale, { toValue: 1,    useNativeDriver: true, tension: 200 }).start()}
-                  onPress={() => { router.push(item.href as any); onClose?.(); }}
-                  activeOpacity={1}
-                  style={[s.navItem, active && { backgroundColor: 'rgba(255,255,255,0.13)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }]}>
-                  <Text style={[s.navIcon, { opacity: active ? 1 : 0.7 }]}>{item.icon}</Text>
-                  <Text style={[s.navLabel, active && s.navLabelActive]}>{item.label}</Text>
-                  {badgeCount > 0 && (
-                    <View style={s.badge}>
-                      <Text style={s.badgeText}>{badgeCount}</Text>
-                    </View>
-                  )}
-                  {active && <View style={[s.activeBar, { backgroundColor: accent }]} />}
-                </TouchableOpacity>
-              </Animated.View>
+              <NavItem
+                key={item.href}
+                item={item as NavLink}
+                active={pathname === item.href}
+                badgeCount={badgeCount}
+                accent={accent}
+                onPress={() => { router.push((item as NavLink).href as any); onClose?.(); }}
+              />
             );
           })}
         </ScrollView>
