@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const Medicine = require("../models/Medicine");
 const DoseLog = require("../models/DoseLog");
+const Notification = require("../models/Notification");
 
 const parseScheduledTime = (value) => {
 	if (!value) {
@@ -55,10 +56,11 @@ const upsertDoseLog = async ({ patientId, medicineId, status, scheduledTime }) =
 	});
 
 	if (existingLog) {
+		const becameMissed = existingLog.status !== "missed" && status === "missed";
 		existingLog.status = status;
 		existingLog.loggedAt = new Date();
 		await existingLog.save();
-		return { doseLog: existingLog, updated: true };
+		return { doseLog: existingLog, updated: true, becameMissed, medicine };
 	}
 
 	const createdLog = await DoseLog.create({
@@ -68,7 +70,26 @@ const upsertDoseLog = async ({ patientId, medicineId, status, scheduledTime }) =
 		scheduledTime: normalizedScheduledTime,
 	});
 
-	return { doseLog: createdLog, updated: false };
+	return {
+		doseLog: createdLog,
+		updated: false,
+		becameMissed: status === "missed",
+		medicine,
+	};
+};
+
+const createMissedDoseNotification = async ({ userId, medicine, scheduledTime }) => {
+	await Notification.create({
+		userId,
+		type: "dose_missed",
+		title: "Missed Dose Alert",
+		message: `You missed a scheduled dose for ${medicine.name}.`,
+		metadata: {
+			medicineId: medicine._id,
+			medicineName: medicine.name,
+			scheduledTime,
+		},
+	});
 };
 
 const addMedicine = async (req, res, next) => {
@@ -141,6 +162,14 @@ const logDose = async (req, res, next) => {
 			return res.status(result.status || 400).json({ message: result.error });
 		}
 
+		if (result.becameMissed) {
+			await createMissedDoseNotification({
+				userId: req.user.id,
+				medicine: result.medicine,
+				scheduledTime: result.doseLog.scheduledTime,
+			});
+		}
+
 		return res.status(201).json({
 			message: result.updated ? "Dose updated successfully." : "Dose logged successfully.",
 			doseLog: result.doseLog,
@@ -171,6 +200,14 @@ const markDoseStatus = async (req, res, next) => {
 
 		if (result.error) {
 			return res.status(result.status || 400).json({ message: result.error });
+		}
+
+		if (result.becameMissed) {
+			await createMissedDoseNotification({
+				userId: req.user.id,
+				medicine: result.medicine,
+				scheduledTime: result.doseLog.scheduledTime,
+			});
 		}
 
 		return res.status(201).json({
