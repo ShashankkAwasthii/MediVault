@@ -28,7 +28,7 @@ export default function BottomNavLayout({
 }: BottomNavLayoutProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const { colors, userName } = useTheme();
+  const { colors, userName, isDark, toggleTheme } = useTheme();
   const insets = useSafeAreaInsets();
   
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -82,6 +82,13 @@ export default function BottomNavLayout({
           
           <View style={styles.headerRight}>
             {headerRight}
+            <TouchableOpacity
+              style={[styles.themeToggle, { backgroundColor: isDark ? accent + '55' : 'rgba(255,255,255,0.15)' }]}
+              onPress={toggleTheme}
+              activeOpacity={0.7}
+            >
+              <Ionicons name={isDark ? 'sunny' : 'moon'} size={16} color="white" />
+            </TouchableOpacity>
             <TouchableOpacity 
               style={[styles.avatar, { backgroundColor: accent + '33', borderColor: accent }]}
               onPress={() => router.push('/screens/Profile')}
@@ -172,6 +179,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1.5,
+  },
+  themeToggle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   avatarText: {
     color: 'white',
