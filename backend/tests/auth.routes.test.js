@@ -1,23 +1,26 @@
 const express = require("express");
 const request = require("supertest");
 
-jest.mock("../controllers/authController", () => ({
+jest.mock("../src/controllers/authController", () => ({
   register: jest.fn((req, res) => res.status(201).json({ token: "t", user: { id: "u1", role: req.body.role || "patient" } })),
   login: jest.fn((req, res) => res.status(200).json({ token: "t", user: { id: "u1", role: req.body.role || "patient" } })),
   me: jest.fn((req, res) => res.status(200).json({ user: { id: "u1", role: "patient" } })),
+  updateProfile: jest.fn((req, res) => res.status(200).json({ message: "Profile updated successfully.", user: { id: "u1" } })),
+  updateHealthInfo: jest.fn((req, res) => res.status(200).json({ message: "Health information updated successfully.", user: { id: "u1" } })),
+  changePassword: jest.fn((req, res) => res.status(200).json({ message: "Password changed successfully." })),
 }));
 
-jest.mock("../middleware/rateLimiters", () => ({
+jest.mock("../src/middleware/rateLimiters", () => ({
   authLimiter: (req, res, next) => next(),
 }));
 
-jest.mock("../middleware/verifyToken", () => (req, res, next) => {
+jest.mock("../src/middleware/verifyToken", () => (req, res, next) => {
   req.user = { id: "u1", role: "patient" };
   next();
 });
 
-const authRoutes = require("../routes/auth");
-const { register, login, me } = require("../controllers/authController");
+const authRoutes = require("../src/routes/auth");
+const { register, login, me } = require("../src/controllers/authController");
 
 const buildApp = () => {
   const app = express();

@@ -3,7 +3,7 @@ const request = require("supertest");
 
 const currentRole = { value: "patient" };
 
-jest.mock("../controllers/dashboardController", () => ({
+jest.mock("../src/controllers/dashboardController", () => ({
   getPatientDashboard: jest.fn((req, res) =>
     res.status(200).json({
       summary: { unreadNotifications: 0, unreadNotificationsByType: {} },
@@ -18,39 +18,39 @@ jest.mock("../controllers/dashboardController", () => ({
   ),
 }));
 
-jest.mock("../middleware/verifyToken", () => (req, res, next) => {
+jest.mock("../src/middleware/verifyToken", () => (req, res, next) => {
   req.user = { id: "507f1f77bcf86cd799439011", role: currentRole.value };
   next();
 });
 
-jest.mock("../middleware/requireRole", () => (...roles) => (req, res, next) => {
+jest.mock("../src/middleware/requireRole", () => (...roles) => (req, res, next) => {
   if (!req.user || !roles.includes(req.user.role)) {
     return res.status(403).json({ message: "Forbidden" });
   }
   return next();
 });
 
-jest.mock("../controllers/recordController", () => ({
+jest.mock("../src/controllers/recordController", () => ({
   getMyRecords: jest.fn((req, res) => res.status(200).json({ records: [] })),
   getRecordById: jest.fn((req, res) => res.status(200).json({ record: { id: req.params.id } })),
   createRecord: jest.fn((req, res) => res.status(201).json({ message: "ok" })),
   getPatientRecords: jest.fn((req, res) => res.status(200).json({ records: [] })),
 }));
 
-jest.mock("../controllers/reportController", () => ({
+jest.mock("../src/controllers/reportController", () => ({
   getMyReports: jest.fn((req, res) => res.status(200).json({ reports: [] })),
   uploadMyReport: jest.fn((req, res) => res.status(201).json({ message: "ok" })),
   deleteMyReport: jest.fn((req, res) => res.status(200).json({ message: "ok" })),
   getPatientReports: jest.fn((req, res) => res.status(200).json({ reports: [] })),
 }));
 
-jest.mock("../controllers/doctorPatientController", () => ({
+jest.mock("../src/controllers/doctorPatientController", () => ({
   getMyAssignedPatients: jest.fn((req, res) => res.status(200).json({ patients: [] })),
   assignPatientToDoctor: jest.fn((req, res) => res.status(200).json({ message: "ok" })),
   unassignPatientFromDoctor: jest.fn((req, res) => res.status(200).json({ message: "ok" })),
 }));
 
-jest.mock("../middleware/requestValidation", () => ({
+jest.mock("../src/middleware/requestValidation", () => ({
   validateRecordIdParam: (req, res, next) => next(),
   validateReportIdParam: (req, res, next) => next(),
   validateCreateRecord: (req, res, next) => next(),
@@ -58,17 +58,17 @@ jest.mock("../middleware/requestValidation", () => ({
   validateDoctorPatientsQuery: (req, res, next) => next(),
 }));
 
-jest.mock("../middleware/uploadReport", () => ({
+jest.mock("../src/middleware/uploadReport", () => ({
   single: () => (req, res, next) => next(),
 }));
 
-jest.mock("../middleware/rateLimiters", () => ({
+jest.mock("../src/middleware/rateLimiters", () => ({
   reportUploadLimiter: (req, res, next) => next(),
 }));
 
-const patientRoutes = require("../routes/patient");
-const doctorRoutes = require("../routes/doctor");
-const { getPatientDashboard, getDoctorDashboard } = require("../controllers/dashboardController");
+const patientRoutes = require("../src/routes/patient");
+const doctorRoutes = require("../src/routes/doctor");
+const { getPatientDashboard, getDoctorDashboard } = require("../src/controllers/dashboardController");
 
 const buildApp = () => {
   const app = express();
