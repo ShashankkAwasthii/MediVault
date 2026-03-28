@@ -1,7 +1,7 @@
 const express = require("express");
 const request = require("supertest");
 
-jest.mock("../controllers/notificationController", () => ({
+jest.mock("../src/controllers/notificationController", () => ({
   getMyNotifications: jest.fn((req, res) =>
     res.status(200).json({
       notifications: [],
@@ -22,19 +22,19 @@ jest.mock("../controllers/notificationController", () => ({
   ),
 }));
 
-jest.mock("../middleware/verifyToken", () => (req, res, next) => {
+jest.mock("../src/middleware/verifyToken", () => (req, res, next) => {
   req.user = { id: "507f1f77bcf86cd799439011", role: "patient" };
   next();
 });
 
-const notificationRoutes = require("../routes/notification");
+const notificationRoutes = require("../src/routes/notification");
 const {
   getMyNotifications,
   getUnreadCount,
   markNotificationRead,
   markAllNotificationsRead,
   deleteNotification,
-} = require("../controllers/notificationController");
+} = require("../src/controllers/notificationController");
 
 const buildApp = () => {
   const app = express();

@@ -1,4 +1,4 @@
-jest.mock("../models/Notification", () => ({
+jest.mock("../src/models/Notification", () => ({
   countDocuments: jest.fn(),
   aggregate: jest.fn(),
   find: jest.fn(),
@@ -6,13 +6,13 @@ jest.mock("../models/Notification", () => ({
   updateMany: jest.fn(),
 }));
 
-const Notification = require("../models/Notification");
+const Notification = require("../src/models/Notification");
 const {
   getMyNotifications,
   getUnreadCount,
   markNotificationRead,
   markAllNotificationsRead,
-} = require("../controllers/notificationController");
+} = require("../src/controllers/notificationController");
 
 const buildRes = () => {
   const res = {};

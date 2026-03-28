@@ -1,45 +1,45 @@
-jest.mock("../models/User", () => ({
+jest.mock("../src/models/User", () => ({
   find: jest.fn(),
 }));
 
-jest.mock("../models/Medicine", () => ({
+jest.mock("../src/models/Medicine", () => ({
   find: jest.fn(),
 }));
 
-jest.mock("../models/DoseLog", () => ({
+jest.mock("../src/models/DoseLog", () => ({
   find: jest.fn(),
   countDocuments: jest.fn(),
 }));
 
-jest.mock("../models/Notification", () => ({
+jest.mock("../src/models/Notification", () => ({
   countDocuments: jest.fn(),
   aggregate: jest.fn(),
 }));
 
-jest.mock("../models/SymptomLog", () => ({
+jest.mock("../src/models/SymptomLog", () => ({
   find: jest.fn(),
   distinct: jest.fn(),
 }));
 
-jest.mock("../models/Report", () => ({
+jest.mock("../src/models/Report", () => ({
   find: jest.fn(),
 }));
 
-jest.mock("../models/MedRecord", () => ({
+jest.mock("../src/models/MedRecord", () => ({
   countDocuments: jest.fn(),
 }));
 
-const User = require("../models/User");
-const Medicine = require("../models/Medicine");
-const DoseLog = require("../models/DoseLog");
-const Notification = require("../models/Notification");
-const SymptomLog = require("../models/SymptomLog");
-const Report = require("../models/Report");
-const MedRecord = require("../models/MedRecord");
+const User = require("../src/models/User");
+const Medicine = require("../src/models/Medicine");
+const DoseLog = require("../src/models/DoseLog");
+const Notification = require("../src/models/Notification");
+const SymptomLog = require("../src/models/SymptomLog");
+const Report = require("../src/models/Report");
+const MedRecord = require("../src/models/MedRecord");
 const {
   getPatientDashboard,
   getDoctorDashboard,
-} = require("../controllers/dashboardController");
+} = require("../src/controllers/dashboardController");
 
 const buildRes = () => {
   const res = {};

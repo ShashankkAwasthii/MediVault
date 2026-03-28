@@ -1,13 +1,13 @@
 const mongoose = require("mongoose");
 const { MongoMemoryServer } = require("mongodb-memory-server-core");
 
-const Notification = require("../models/Notification");
+const Notification = require("../src/models/Notification");
 const {
   getMyNotifications,
   getUnreadCount,
   markNotificationRead,
   markAllNotificationsRead,
-} = require("../controllers/notificationController");
+} = require("../src/controllers/notificationController");
 
 jest.setTimeout(60000);
 

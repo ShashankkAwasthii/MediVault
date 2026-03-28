@@ -1,7 +1,7 @@
 const express = require("express");
 const request = require("supertest");
 
-jest.mock("../controllers/messageController", () => ({
+jest.mock("../src/controllers/messageController", () => ({
   getMyConversations: jest.fn((req, res) => res.status(200).json({ conversations: [] })),
   getConversationMessages: jest.fn((req, res) =>
     res.status(200).json({
@@ -22,20 +22,20 @@ jest.mock("../controllers/messageController", () => ({
   ),
 }));
 
-jest.mock("../middleware/verifyToken", () => (req, res, next) => {
+jest.mock("../src/middleware/verifyToken", () => (req, res, next) => {
   req.user = { id: "507f1f77bcf86cd799439012", role: "doctor" };
   next();
 });
 
-jest.mock("../middleware/requireRole", () => () => (req, res, next) => next());
+jest.mock("../src/middleware/requireRole", () => () => (req, res, next) => next());
 
-const messageRoutes = require("../routes/message");
+const messageRoutes = require("../src/routes/message");
 const {
   getMyConversations,
   getConversationMessages,
   sendMessage,
   markConversationRead,
-} = require("../controllers/messageController");
+} = require("../src/controllers/messageController");
 
 const buildApp = () => {
   const app = express();
