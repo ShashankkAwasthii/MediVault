@@ -5,6 +5,7 @@ const {
   cloudinary,
   uploadBufferToCloudinary,
 } = require("../config/cloudinary");
+const { extractTextFromImageBuffer } = require("../services/ocrService");
 
 const getMyReports = async (req, res, next) => {
   try {
@@ -50,6 +51,19 @@ const uploadMyReport = async (req, res, next) => {
       public_id: `${req.user.id}_${Date.now()}`,
     });
 
+    let ocrText = "";
+    let ocrConfidence = null;
+
+    if (req.file.mimetype.startsWith("image/")) {
+      try {
+        const ocrResult = await extractTextFromImageBuffer(req.file.buffer);
+        ocrText = ocrResult.text;
+        ocrConfidence = ocrResult.confidence;
+      } catch (ocrError) {
+        console.error("Google Vision OCR failed:", ocrError.message);
+      }
+    }
+
     const report = await Report.create({
       patientId: req.user.id,
       reportType,
@@ -60,11 +74,17 @@ const uploadMyReport = async (req, res, next) => {
       cloudinaryPublicId: uploadResult.public_id,
       cloudinaryResourceType: uploadResult.resource_type,
       aiSummary: "",
+      ocrText,
+      ocrConfidence,
     });
 
     return res.status(201).json({
       message: "Report uploaded successfully.",
       report,
+      ocr: {
+        extracted: Boolean(ocrText),
+        confidence: ocrConfidence,
+      },
     });
   } catch (error) {
     return next(error);

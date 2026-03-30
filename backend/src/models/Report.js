@@ -50,6 +50,17 @@ const reportSchema = new mongoose.Schema(
       trim: true,
       default: "",
     },
+    ocrText: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+    ocrConfidence: {
+      type: Number,
+      min: 0,
+      max: 1,
+      default: null,
+    },
   },
   { timestamps: true }
 );
