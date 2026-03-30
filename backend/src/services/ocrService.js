@@ -1,45 +1,19 @@
-const vision = require("@google-cloud/vision");
-
-const client = new vision.ImageAnnotatorClient();
-
-const getAverageWordConfidence = (fullTextAnnotation) => {
-  const pages = fullTextAnnotation?.pages || [];
-  let totalConfidence = 0;
-  let totalWords = 0;
-
-  for (const page of pages) {
-    for (const block of page.blocks || []) {
-      for (const paragraph of block.paragraphs || []) {
-        for (const word of paragraph.words || []) {
-          if (typeof word.confidence === "number") {
-            totalConfidence += word.confidence;
-            totalWords += 1;
-          }
-        }
-      }
-    }
-  }
-
-  if (totalWords === 0) {
-    return null;
-  }
-
-  return totalConfidence / totalWords;
-};
+const Tesseract = require("tesseract.js");
 
 const extractTextFromImageBuffer = async (buffer) => {
-  const [result] = await client.documentTextDetection({
-    image: {
-      content: buffer.toString("base64"),
-    },
-  });
+  const language = process.env.TESSERACT_LANG || "eng";
+  const {
+    data: { text, confidence },
+  } = await Tesseract.recognize(buffer, language);
 
-  const fullText = result.fullTextAnnotation?.text || "";
-  const confidence = getAverageWordConfidence(result.fullTextAnnotation);
+  const normalizedConfidence =
+    typeof confidence === "number"
+      ? Math.max(0, Math.min(1, confidence / 100))
+      : null;
 
   return {
-    text: fullText.trim(),
-    confidence,
+    text: (text || "").trim(),
+    confidence: normalizedConfidence,
   };
 };
 

@@ -5,8 +5,11 @@ const storage = multer.memoryStorage();
 const allowedMimeTypes = new Set([
   "application/pdf",
   "image/jpeg",
+  "image/jpg",
   "image/png",
   "image/webp",
+  "image/heic",
+  "image/heif",
 ]);
 
 const fileFilter = (req, file, cb) => {

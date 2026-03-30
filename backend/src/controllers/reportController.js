@@ -60,7 +60,7 @@ const uploadMyReport = async (req, res, next) => {
         ocrText = ocrResult.text;
         ocrConfidence = ocrResult.confidence;
       } catch (ocrError) {
-        console.error("Google Vision OCR failed:", ocrError.message);
+        console.error("Tesseract OCR failed:", ocrError.message);
       }
     }
 

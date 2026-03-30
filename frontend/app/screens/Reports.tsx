@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
-  ActivityIndicator, Alert, RefreshControl,
+  ActivityIndicator, Alert, RefreshControl, Platform,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import * as WebBrowser from 'expo-web-browser';
@@ -85,11 +85,22 @@ export default function ReportsScreen() {
 
     try {
       const formData = new FormData();
-      formData.append('report', {
-        uri: selectedFile.uri,
-        type: selectedFile.mimeType || 'image/jpeg',
-        name: selectedFile.fileName || `${selectedType.toLowerCase().replace(/\s+/g, '_')}_${Date.now()}.jpg`,
-      } as unknown as Blob);
+      const fileName =
+        selectedFile.fileName ||
+        `${selectedType.toLowerCase().replace(/\s+/g, '_')}_${Date.now()}.jpg`;
+      const mimeType = selectedFile.mimeType || 'image/jpeg';
+
+      if (Platform.OS === 'web' && (selectedFile as ImagePicker.ImagePickerAsset & { file?: File }).file) {
+        const webFile = (selectedFile as ImagePicker.ImagePickerAsset & { file: File }).file;
+        formData.append('report', webFile, webFile.name || fileName);
+      } else {
+        formData.append('report', {
+          uri: selectedFile.uri,
+          type: mimeType,
+          name: fileName,
+        } as unknown as Blob);
+      }
+
       formData.append('reportType', selectedType);
 
       const newReport = await patientAPI.uploadReport(formData);
