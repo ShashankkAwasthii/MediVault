@@ -362,6 +362,61 @@ const getMockResponse = (endpoint: string): { ok: boolean; status: number; data:
     };
   }
   
+  // Auth endpoints - always use mock for demo mode when backend fails
+  if (endpoint === '/auth/register') {
+    // Extract user data from request body if available
+    let userData = {
+      firstName: 'User',
+      lastName: '',
+      name: 'User',
+      email: 'user@example.com',
+      role: 'patient',
+      bloodType: 'O+',
+      allergies: [] as string[],
+    };
+    try {
+      const body = JSON.parse(options.body as string || '{}');
+      if (body.firstName) userData.firstName = body.firstName;
+      if (body.lastName) userData.lastName = body.lastName;
+      if (body.name) userData.name = body.name;
+      else userData.name = (body.firstName || '') + ' ' + (body.lastName || '');
+      if (body.email) userData.email = body.email;
+      if (body.role) userData.role = body.role;
+      if (body.bloodType) userData.bloodType = body.bloodType;
+      if (body.allergies) userData.allergies = body.allergies;
+    } catch {}
+    return {
+      ok: true,
+      status: 200,
+      data: {
+        token: 'demo-token-' + Date.now(),
+        user: {
+          _id: 'demo-user-' + Date.now(),
+          ...userData,
+        },
+      },
+    };
+  }
+  if (endpoint === '/auth/login') {
+    return {
+      ok: true,
+      status: 200,
+      data: {
+        token: 'demo-token-' + Date.now(),
+        user: {
+          _id: 'demo-user-' + Date.now(),
+          firstName: 'User',
+          lastName: '',
+          name: 'User',
+          email: 'user@example.com',
+          role: 'patient',
+          bloodType: 'O+',
+          allergies: [],
+        },
+      },
+    };
+  }
+  
   // Default: return success
   return { ok: true, status: 200, data: {} };
 };
@@ -388,6 +443,9 @@ const apiCall = async (
     }
   }
 
+  // For auth endpoints, we'll only use mock on network errors/timeouts
+  const isAuthEndpoint = endpoint === '/auth/register' || endpoint === '/auth/login';
+  
   try {
     const response = await fetch(`${BASE_URL}${endpoint}`, {
       ...options,
@@ -408,6 +466,9 @@ const apiCall = async (
       }
     }
 
+    // For auth endpoints, return mock if backend returns validation errors
+    // Don't use mock for auth - let the real error show so user can fix input
+    
     return { ok: response.ok, status: response.status, data };
   } catch (error: unknown) {
     clearTimeout(timeoutId);
