@@ -379,16 +379,12 @@ const apiCall = async (
     ...((options.headers as Record<string, string>) || {}),
   };
 
-  // Check for demo mode before API call
-  if (requiresAuth) {
-    const isDemo = await isDemoMode();
-    if (isDemo) {
-      // Return mock data based on endpoint for demo mode
-      return getMockResponse(endpoint);
-    }
+  const isDemo = await isDemoMode();
+  
+  if (requiresAuth && !isDemo) {
     const token = await getToken();
     if (token) {
-      headers["Authorization"] = `Bearer ${token}`;
+      headers["Authorization"] = "Bearer " + token;
     }
   }
 
@@ -417,9 +413,15 @@ const apiCall = async (
     clearTimeout(timeoutId);
     const err = error as Error & { name?: string; message?: string };
     if (err.name === "AbortError") {
+      if (isDemo) {
+        return getMockResponse(endpoint);
+      }
       throw new Error("Request timed out. Please check your connection.");
     }
     if (err.name === "TypeError" && err.message?.includes("Network")) {
+      if (isDemo) {
+        return getMockResponse(endpoint);
+      }
       throw new Error("Network error. Please check your internet connection.");
     }
     throw error;

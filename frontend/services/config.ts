@@ -55,7 +55,7 @@ const USE_PHYSICAL_DEVICE = true;
  * Set this to true to use the production API even in development mode
  * Useful for testing against deployed backend
  */
-const USE_PRODUCTION_IN_DEV = true;
+const USE_PRODUCTION_IN_DEV = false;
 
 // ============================================================================
 // AUTOMATIC URL SELECTION (Don't modify below unless you know what you're doing)
