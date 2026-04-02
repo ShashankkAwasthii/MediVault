@@ -23,6 +23,7 @@ const symptomRoutes = require("./routes/symptom");
 const notificationRoutes = require("./routes/notification");
 const qrRoutes = require("./routes/qr");
 const messageRoutes = require("./routes/message");
+const aiRoutes = require("./routes/ai");
 const { router: cronRouter } = require("./schedulers/missedDoseScheduler");
 const { router: dailySummaryRouter } = require("./schedulers/dailySummaryScheduler");
 
@@ -90,6 +91,7 @@ app.use("/api/v1/symptom", symptomRoutes);
 app.use("/api/v1/notifications", notificationRoutes);
 app.use("/api/v1/qr", qrRoutes);
 app.use("/api/v1/messages", messageRoutes);
+app.use("/api/v1/ai", aiRoutes);
 app.use("/api/v1/cron", cronRouter);
 app.use("/api/v1/cron/daily-summary", dailySummaryRouter);
 

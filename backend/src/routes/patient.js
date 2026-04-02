@@ -10,6 +10,7 @@ const {
   getMyReports,
   uploadMyReport,
   deleteMyReport,
+  analyzeMyReport,
 } = require("../controllers/reportController");
 const { getMyMedicines } = require("../controllers/medicineController");
 const {
@@ -32,6 +33,7 @@ router.get("/records/:id", validateRecordIdParam, getRecordById);
 
 router.get("/reports", getMyReports);
 router.post("/reports", reportUploadLimiter, uploadReport.single("report"), uploadMyReport);
+router.post("/reports/:id/analyze", validateReportIdParam, analyzeMyReport);
 router.delete("/reports/:id", validateReportIdParam, deleteMyReport);
 
 module.exports = router;
