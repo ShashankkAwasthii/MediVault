@@ -18,18 +18,11 @@ import { Platform } from 'react-native';
  */
 
 // For Web and iOS Simulator (running on same machine as backend)
-const DEV_LOCALHOST_URL = "http://10.11.19.197:5000/api/v1";
+const DEV_LOCALHOST_URL = "http://10.5.1.152:5000/api/v1";
 
-// For Android Emulator (special IP that maps to host machine's localhost)
 const DEV_ANDROID_EMULATOR_URL = "http://10.0.2.2:5000/api/v1";
 
-// For Physical Devices on Same WiFi Network (Mobile/Expo Go)
-// IMPORTANT: Replace with your computer's actual local IP address
-// Windows: Run `ipconfig` in cmd, look for "IPv4 Address" under your WiFi adapter
-// Mac/Linux: Run `ifconfig` or `ip addr`, look for "inet" address
-// Example: If your IP is 192.168.1.100, use: 'http://192.168.1.100:5000/api/v1'
-// Current value matches your network - update if needed
-const DEV_LOCAL_NETWORK_URL = "http://10.11.19.197:5000/api/v1";
+const DEV_LOCAL_NETWORK_URL = "http://10.5.1.152:5000/api/v1";
 
 /**
  * Get local IP address automatically
