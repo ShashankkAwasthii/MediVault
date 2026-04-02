@@ -9,6 +9,7 @@ const {
   extractTextFromImageBuffer,
   extractTextFromPdfBuffer,
 } = require("../services/ocrService");
+const { explainMedicalReport } = require("../config/ai");
 
 const getMyReports = async (req, res, next) => {
   try {
@@ -180,9 +181,46 @@ const getPatientReports = async (req, res, next) => {
   }
 };
 
+const analyzeMyReport = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "Invalid report id." });
+    }
+
+    const report = await Report.findOne({ _id: id, patientId: req.user.id });
+    if (!report) {
+      return res.status(404).json({ message: "Report not found." });
+    }
+
+    const textToAnalyze = report.ocrText || report.reportType;
+    if (!textToAnalyze) {
+      return res.status(400).json({ message: "No text available to analyze." });
+    }
+
+    const aiResult = await explainMedicalReport(textToAnalyze);
+
+    if (aiResult.success) {
+      report.aiSummary = aiResult.data;
+      await report.save();
+      return res.status(200).json({
+        message: aiResult.mock ? "Mock AI summary (set API key for real)" : "AI analysis complete",
+        aiSummary: report.aiSummary,
+        is_mock: !!aiResult.mock,
+      });
+    } else {
+      return res.status(502).json({ message: `AI analysis failed: ${aiResult.error}` });
+    }
+  } catch (error) {
+    return next(error);
+  }
+};
+
 module.exports = {
   getMyReports,
   uploadMyReport,
   deleteMyReport,
   getPatientReports,
+  analyzeMyReport,
 };
