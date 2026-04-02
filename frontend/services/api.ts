@@ -450,8 +450,10 @@ const apiCall = async (
   options: RequestInit = {},
   requiresAuth: boolean = true,
 ): Promise<{ ok: boolean; status: number; data: Record<string, unknown> }> => {
+  const isAIEndpoint = endpoint.startsWith('/ai/') || endpoint.includes('/analyze');
+  const timeoutMs = isAIEndpoint ? 30000 : TIMEOUT_MS;
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
