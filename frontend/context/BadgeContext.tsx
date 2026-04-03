@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useCallback, useEffect } fr
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { notificationAPI, Notification } from '../services/api';
+import { useDoseNotifications } from '../hooks/useDoseNotifications';
 
 const TOKEN_KEY = '@MediVault:authToken';
 
@@ -162,6 +163,7 @@ export function BadgeProvider({ children }: { children: React.ReactNode }) {
   const [messageCount, setMessageCount] = useState(0);
   const [alertCount, setAlertCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   const [doctorNotifs, setDoctorNotifs] = useState<NotifItem[]>([]);
   const [patientNotifs, setPatientNotifs] = useState<NotifItem[]>([]);
@@ -273,13 +275,18 @@ export function BadgeProvider({ children }: { children: React.ReactNode }) {
     setPatientSettings(prev => ({ ...prev, [key]: !prev[key] }));
   }, []);
 
+  // Schedule local dose reminder notifications whenever the user is logged in
+  useDoseNotifications(isLoggedIn);
+
   useEffect(() => {
     const checkAndFetch = async () => {
       try {
         const token = await AsyncStorage.getItem(TOKEN_KEY);
         if (token) {
+          setIsLoggedIn(true);
           await refreshNotifications();
         } else {
+          setIsLoggedIn(false);
           setIsLoading(false);
         }
       } catch {
